@@ -55,8 +55,10 @@ int main(int argc, char **argv) {
 			}
 				output[i] = buff[i];
 		}
-		
+		free(buff);
 		printf("%s\n", output);
+		free(output);
+		
 	} else {
 		linesRead = 0;
 		int incCounter = 0;
@@ -84,6 +86,7 @@ int main(int argc, char **argv) {
 		}
 		
 		printf("%s\n", buff);
+		free(buff);
 	}
 	
 	return 0;
