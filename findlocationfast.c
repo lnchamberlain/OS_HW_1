@@ -1,3 +1,10 @@
+/*Assignment 1 Problem 4
+Logan Chamberlain and Benjamin Good
+CSCE A321: Operating Systems
+February 16, 2021
+
+findlocationfast.c is an implementation of a binary search on list of phone number prefixes contained in the file 'nanpa.txt'. Only level two system calls are utilized save for the use of fprintf to print strerr(errno). This algorithm improves upon the search script written for problem 2 of this assignment. File format specified in assignment description. */
+
 #include <unistd.h>
 #include <errno.h>
 #include<string.h>
@@ -5,25 +12,23 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-
 #include <stdio.h>
-/*Would like to use this but can't figure out how..*/
-/*TODO change the file size to (size_t) lseek(SEEK_END)*/
-/*TODO change error messages to assert strerror and fprintf*/
-/*TODO Change num characters per line to be aquired using lseek as well*/
+
 int returnDigit(char ch);
 int checkValue(char mappedFile[], int toCompare, int offsetIndex);
 int binarySearchOfNanpaArray(char mappedFile[], int startIndex, int endIndex, int numCharsPerLine, int target);
 int getNumFromString(char str[]);
 
-
-const size_t MAX_FILE_SIZE = 2147483648;
 const char PATH_NAME[] = "nanpa";
 
 int main(int argc, char *argv[]){
-  int fd;
-  int prefixValue;
-    
+  int fd, prefixValue, i, offset;
+  const char* prefix;
+  size_t fileLength;
+  char *mappedFile;
+  int numCharsPerLine, numEntries, entryNumber;
+  int startIndexOfCity, endIndexOfCity;
+  char currChar;
   /*Handle case too many arguments passed*/
   if(argc > 2){
     char tooManyArgumentsErrorMessage[] = "Enter 1 prefix\n";
@@ -36,11 +41,10 @@ int main(int argc, char *argv[]){
     write(1, tooFewArgumentsErrorMessage, sizeof(tooFewArgumentsErrorMessage));
     return 1;
   }
-  
-    /*Move from arguments into array*/
+      /*Move from arguments into array*/
    if(argc == 2){
       /* prefix is stored in argv[1] */
-      const char *prefix = argv[1];
+      prefix = argv[1];
       prefixValue = getNumFromString(prefix);
      
       /*Handle case: not 6 digit input*/
@@ -60,10 +64,9 @@ int main(int argc, char *argv[]){
       /*Open Nanpa.txt */
      
       fd = open(PATH_NAME, O_RDONLY, 0);
-      int offset = lseek(fd, 0, SEEK_CUR);
+      offset = lseek(fd, 0, SEEK_CUR);
       if(fd == -1){
-	char fileOpenFailedMessage[] = "File failed to open\n";
-	write(1, fileOpenFailedMessage, sizeof(fileOpenFailedMessage));
+	fprintf(stderr, "File failed to open: %s\n", strerror(errno));
 	return 1;
       }
       if(fd >= 0){
@@ -71,108 +74,139 @@ int main(int argc, char *argv[]){
 	write(1, fileOpenSuccess, sizeof(fileOpenSuccess));
       }
     }
-
-    /*Map to memory using mmap*/
-   /*TODO change the file size to (size_t) lseek(SEEK_END)*/
-  size_t fileLength = lseek(fd, (size_t)0, SEEK_END);
-  char *mappedFile = mmap(NULL, fileLength, PROT_READ, MAP_PRIVATE, fd, 0);
-    if(mappedFile == MAP_FAILED){
-      char mappingFailureMessage[] = "Mapping failed\n";
-      write(1, mappingFailureMessage, sizeof(mappingFailureMessage));
+  fileLength = lseek(fd, (size_t)0, SEEK_END);
+  //If file is not searchable, return 1 and close fd
+  if(fileLength == -1){
+    fprintf(stderr, "File not searchable: %s\n", strerror(errno));
+    if( close(fd) < 0){
+      fprintf(stderr, "Error closing file %s\n", strerror(errno));
       return 1;
     }
     else{
-      char mappingSuccessMessage[] = "File Mapped Successfully\n";
+      char closeSuccess[] = "File closed Successfully \n";
+      write(1, closeSuccess, sizeof(closeSuccess));
+    }
+    return 1;
+  }
+
+  //Map file to memory using mmap
+  mappedFile = mmap(NULL, fileLength, PROT_READ, MAP_PRIVATE, fd, 0);
+
+  //If mapping failed, unmap and close fd 
+    if(mappedFile == MAP_FAILED){
+      fprintf(stderr, "Mapping failed: %s\n", strerror(errno));
+
+      //close fd
+      if( close(fd) < 0){
+	fprintf(stderr, "Error closing file %s\n", strerror(errno));
+	return 1;
+      }
+      else{
+	char closeSuccess[] = "File closed Successfully \n";
+	write(1, closeSuccess, sizeof(closeSuccess));
+      }
+      //unmap memory
+      if(munmap(mappedFile, fileLength) < 0){
+	fprintf(stderr, "Error unmapping file: %s\n", strerror(errno));
+      }
+      else{
+	char unmapSuccess[] = "File unmapped succesfully \n";
+	write(1, unmapSuccess, sizeof(unmapSuccess));
+      }     
+      return 1;
+    }
+      
+    else{
+      char mappingSuccessMessage[] = "File mapped successfully\n";
       write(1, mappingSuccessMessage, sizeof(mappingSuccessMessage));
 
     }
-    int numCharsPerLine;
-    int i= 0;
-    /*Find the number of lines in file by counting '\n' + 1 */
-    while(mappedFile[i] != '\n'){
-      i++;
-    }
-    
-    numCharsPerLine = i + 1;
-    int numEntries = (int)fileLength / numCharsPerLine;   
-    int entryNumber;
- entryNumber = binarySearchOfNanpaArray(mappedFile,0, numEntries-1, numCharsPerLine, prefixValue);
+
+    //the number of characters per line is specified in the file format, could aquired through 'while mappedFil[i] != '\n' i++' but iterating over entire array is not O(lgn)
+    numCharsPerLine = 32;
+    numEntries = (int)fileLength / numCharsPerLine;   
+    entryNumber = binarySearchOfNanpaArray(mappedFile,0, numEntries-1, numCharsPerLine, prefixValue);
  /*entryNumber is equal to the line number of the prefix, the first letter can be read using mappedFile[entryNumber * numCharsPerLine], entryNumber is set to -1 if the number is not found */
+ //If not found in nanpa, unmap memory and close fd
  if(entryNumber == -1){
    char notFoundInNanpa[] = "Prefix not found in Nanpa\n";
    write(1, notFoundInNanpa, sizeof(notFoundInNanpa));
+   /*unmap file from memory */
+   if(munmap(mappedFile, fileLength) < 0){
+     fprintf(stderr, "Error unmapping file: %s\n", strerror(errno));
+   }
+   else{
+     char unmapSuccess[] = "File unmapped succesfully \n";
+     write(1, unmapSuccess, sizeof(unmapSuccess));
+   }
+   /*Close the file descriptor*/
+   if( close(fd) < 0){
+     fprintf(stderr, "Error closing file %s\n", strerror(errno));
+     return 1;
+   }
+   else{
+     char closeSuccess[] = "File closed Successfully \n";
+     write(1, closeSuccess, sizeof(closeSuccess));
+   }
    return 1;
  }
  else{
-   i = 0;
-   int toBreak = 0;
-   int startIndexOfCity = (entryNumber * 32) + 6;
-   printf("Char = %c \n", mappedFile[startIndexOfCity]);
-   /*while(1){
-     if(mappedFile[startIndexOfCity + i] == " "){
-       if(mappedFile[startIndexOfCity+ i +1] == " "){
-	 toBreak = -1;
-       }
-     }
-     printf("char = %c \n", mappedFile[startIndexOfCity + i]);
-     if(toBreak < 0){
-       break;
-     }
-     write(1, mappedFile[i+startIndexOfCity], sizeof(mappedFile[i+startIndexOfCity]));
-     i++;
-     }
-   */
-   char currChar;
-   int endIndexOfCity;
+   startIndexOfCity = (entryNumber * 32) + 6;
+   currChar;
+   endIndexOfCity;
+   /*To trim whitespace off end of area name, endIndexOfCity is set to the first occurance of two consecutive spaces */
    for( i = 0; i < numCharsPerLine; i++){
      if(mappedFile[startIndexOfCity + i] == ' '){
        if(mappedFile[startIndexOfCity+ i +1] == ' '){
 	 endIndexOfCity = i;
+	 break;
        }
      }
     }
-   printf("endIndex = %d\n", endIndexOfCity);
+   //print area
+   char city[endIndexOfCity + 1];
    for(i = 0; i < endIndexOfCity; i++){
-     currChar = mappedFile[i + startIndexOfCity];
-     printf("%c", currChar);
-     write(1, currChar, sizeof(currChar));
+     city[i] = mappedFile[i + startIndexOfCity];
    }
+   //Add newline character for the sake of readability
+   city[endIndexOfCity] = '\n';
+   write(1, city, sizeof(city));
  }
  /*unmap file from memory */
  if(munmap(mappedFile, fileLength) < 0){
-   char unmapFailedMessage[] = "Unmap failed \n";
-   write(1, unmapFailedMessage, sizeof(unmapFailedMessage));
- }
+   fprintf(stderr, "Error unmapping file: %s\n", strerror(errno));
+    }
+ else{
+   char unmapSuccess[] = "File unmapped succesfully \n";
+   write(1, unmapSuccess, sizeof(unmapSuccess));
+}
 
  /*Close the file descriptor*/
  if( close(fd) < 0){
-   char closeError[] = "Error closing file \n";
-   write(1, closeError, sizeof(closeError));
+   fprintf(stderr, "Error closing file %s\n", strerror(errno));
    return 1;
+ }
+ else{
+   char closeSuccess[] = "File closed Successfully \n";
+   write(1, closeSuccess, sizeof(closeSuccess));
  }
  return 0;
 }
 
-/*checkValue takes in a pointer to a line in the mappedByLine array,
-slices out the phone code at indicies 1-7 (ea ch entry begins with a 0
-due to the null terminator), then casts to integers and compares the
-inputted prefix. If\ the inputted prefix (denoted toCompare) is larger
-than the area code, 1 is returned. If in the prefix matches the area
-code, 0 is returned. If prefix is smaller than area code, -1 is
-returned. */
+/*checkValue takes in a reference to the mappedFile array, slices out the phone code at indicies 0-6 as specifed in the format of the file, then casts to integers and compares the prefix 'toCompare'. If the inputted prefix is larger than the area code, 1 is returned. If in the prefix matches the area code, 0 is returned. If prefix is smaller than area code, -1 is returned. */
 int checkValue(char mappedFile[], int toCompare, int offsetIndex){
   char slice[6];
-  for(int i = 0; i < 6; i++){
+  int num, i;
+  for(i = 0; i < 6; i++){
     slice[i] = "0";
    }
- 
+  //getNumFromString function terminates at the NULL character
   slice[6] = NULL;
  
-   for(int i = 0; i < 6; i++){
+   for(i = 0; i < 6; i++){
     slice[i] = mappedFile[offsetIndex + i];
   }
-  int num;
- 
+
   num = getNumFromString(slice);
    if(num > toCompare){
     return -1;
@@ -185,9 +219,7 @@ int checkValue(char mappedFile[], int toCompare, int offsetIndex){
   }
 
 }
-/*Implemenation of binary search on nanpa array, accepts the nanpa file stored in an array by line and uses helpe\
- function checkVaule to compare midpoint area code values until the target is found. Returns the line index of the
- target, -1 if not in the array. */
+/*Implemenation of binary search on nanpa array, accepts the nanpa file stored in a character array  uses helper function checkVaule to compare midpoint area code values until the target is found. Returns entryNumber of the target, -1 if not in the array. */
 int binarySearchOfNanpaArray(char mappedFile[], int startIndex, int endIndex, int numCharsPerLine, int target){
   int midpoint, result;
   while(startIndex <= endIndex){
@@ -206,7 +238,7 @@ int binarySearchOfNanpaArray(char mappedFile[], int startIndex, int endIndex, in
     return -1;
 }
 
-/*getNumFromString accepts a string and then returns the integer value. Will return 0 if input is not of size 6 and will return a negative number if the input was not entirely digits 0-9.*/
+/*getNumFromString accepts a phone prefix as a string and returns the integer equivelent. Will return 0 if input is not of size 6 and will return a negative number if the input was not entirely digits 0-9.*/
 int getNumFromString(char str[]){
   int integerValue = 0;
 
@@ -234,8 +266,8 @@ ointer, not the array*/
 
 /*returnDigit is a helper function to getNumFromStr that accepts a character and returns the digit value. In the case where the character is not a digit 0-9, a negative number greater than the prefix is returned so that if the integerValue is negative, the input was not exclusively digits*/
 int returnDigit(char ch){
-  int digitVal;
-  int chVal = (int) ch;
+  int digitVal, chVal;
+  chVal = (int) ch;
   switch(chVal){
   case 48:
     digitVal = 0;
@@ -268,7 +300,7 @@ int returnDigit(char ch){
     digitVal = 9;
     break;
   default:
-    /*If any characters are not digits, returning a negative value larger than the most significant digit will ensure than the return value of get numFromStr is negative if the input is not exclusively*/
+    /*If any characters are not digits, returning a negative value larger than the most significant digit will ensure than the return value of get numFromString is negative if the input is not exclusively digits 0-9*/
     digitVal = -1000000;
 
   }
