@@ -36,6 +36,7 @@ int main(int argc, char *argv[]){
   size_t fileLength;
   nanpa_entry*mappedFile;
   int numCharsPerLine, numEntries, entryNumber, endIndexOfCity;
+  char expectedFileName[] = "nanpa";
   /*Handle case too many arguments passed*/
   if(argc > 3){
     char tooManyArgumentsErrorMessage[] = "Enter file name followed by 1 prefix\n";
@@ -52,6 +53,17 @@ int main(int argc, char *argv[]){
    if(argc == 3){
       /* prefix is stored in argv[2] */
      fileName = argv[1];
+
+
+     //If filename is not nanpa, exit
+     for(i = 0; fileName[i] != NULL; i++){
+       if(fileName[i] != expectedFileName[i]){
+	 char fileNameNotNanpa[] = "Filename not 'nanpa', findlocationfast is designed to search the nanpa file \n";
+	 write(1, fileNameNotNanpa, sizeof(fileNameNotNanpa));
+	 return 1;
+	   }
+     }
+     
       prefix = argv[2];
       prefixValue = getNumFromString(prefix);
      
