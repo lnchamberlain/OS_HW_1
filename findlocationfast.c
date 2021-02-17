@@ -14,6 +14,7 @@ findlocationfast.c is an implementation of a binary search on list of phone numb
 #include <sys/mman.h>
 #include <stdio.h>
 
+/*format of an entry in nanpa file specified in assignment, 6 digit prefix followed by area name followed by a new line character*/
 typedef struct{
   char prefix[6];
   char area[25];
@@ -27,7 +28,6 @@ int binarySearchOfNanpaArray(nanpa_entry *mappedFile, int startIndex, int endInd
 int getNumFromString(char str[]);
 int closeFd(int fd);
 int unmapMemory(nanpa_entry *mappedFile, int fileLength);
-/*TODO get file name from command line */
 
 int main(int argc, char *argv[]){
   int fd, prefixValue, i, offset;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]){
   }
       /*Move from arguments into array*/
    if(argc == 3){
-      /* prefix is stored in argv[1] */
+      /* prefix is stored in argv[2] */
      fileName = argv[1];
       prefix = argv[2];
       prefixValue = getNumFromString(prefix);
