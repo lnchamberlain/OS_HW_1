@@ -133,38 +133,43 @@ int main(int argc, char **argv) {
 	
 	if (passedFile) {
 		fd = open(fileName, O_RDONLY);
-		if (fd == -1) {
-			printf("An error occured while trying to open the file.\n");
-			exit(1);
-		}
-		linesRead = 0;
-		int charsRead = 0;
-		read(fd, buff, n);
-		int ex = 0;
-		int linePoint = 0;
-		int lastLines[lines];
-		int lineIndex = 0;
-		for (i = 0; buff[i] != '\0'; i++) {
-			if (buff[i] == '\n') {
-				linesRead++;
-				if (lineIndex != lines) {
-					lastLines[lineIndex] = i;
-					lineIndex++;
-				}
-				else {
-					shiftArray(lastLines, i, lines);
-				}
+	} else {
+		fd = 0;
+	}
+	if (fd == -1) {
+		printf("An error occured while trying to open the file.\n");
+		exit(1);
+	}
+	linesRead = 0;
+	int charsRead = 0;
+	read(fd, buff, n);
+	int ex = 0;
+	int linePoint = 0;
+	int lastLines[lines];
+	int lineIndex = 0;
+	for (i = 0; buff[i] != '\0'; i++) {
+		if (buff[i] == '\n') {
+			linesRead++;
+			if (lineIndex != lines) {
+				lastLines[lineIndex] = i;
+				lineIndex++;
+			}
+			else {
+				shiftArray(lastLines, i, lines);
 			}
 		}
-		if (linesRead > lines) {
-			long outSize = getGap(buff, lastLines[0]);
-			char *output = (char *) malloc(outSize);
-			copyChunk(buff, output, lastLines[0]);
-			printf("%s\n", output);
-			free(output);
-		}
-		else {
-			printf("%s\n", buff);
-		}
+	}
+	if (linesRead > lines) {
+		long outSize = getGap(buff, lastLines[0]);
+		char *output = (char *) malloc(outSize);
+		copyChunk(buff, output, lastLines[0]);
+		printf("%s\n", output);
+		free(output);
+	}
+	else {
+		printf("%s\n", buff);
+	}
+	if (passedFile) {
+		close(fd);
 	}
 }

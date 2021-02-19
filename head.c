@@ -30,64 +30,39 @@ int main(int argc, char **argv) {
 		lines = 10;
 	}
 	
+	size_t endPoint;
 	if (passedFile) {
 		fd = open(argv[1], O_RDONLY);
 		if (fd == -1) {
 			printf("Failed to open file.\n");
 			exit(1);
 		}
-		size_t endPoint = read(fd, buff, n);
+		endPoint = read(fd, buff, n);
 		buff[endPoint] = '\0';
 		close(fd);
-		
-		linesRead = 0;
-		char* output = (char *) malloc(endPoint);
-		for (i = 0; i < endPoint; i++) {
-			if (buff[i] == '\0') {
-				break;
-			}
-			if (linesRead >= lines) {
-				break;
-			}
-			if (buff[i] == '\n') {
-				linesRead++;
-				
-			}
-				output[i] = buff[i];
-		}
-		free(buff);
-		printf("%s\n", output);
-		free(output);
-		
 	} else {
-		linesRead = 0;
-		int incCounter = 0;
-		for (i = 0; i < argc - 1; i++) {
-			if (linesRead >= lines) {
-				break;
-			}
-			int j;
-			for (j = 0; argv[i+1][j] != '\0'; j++) {
-				if (argv[i+1][j] == '\n') {
-					linesRead++;
-				}
-				*buff = argv[i+1][j];
-				buff++;
-				incCounter++;
-			}
-			*buff = ' ';
-			buff++;
-			incCounter++;
-		}
-		*buff = '\0';
-		while (incCounter > 0) {
-			buff--;
-			incCounter--;
-		}
-		
-		printf("%s\n", buff);
-		free(buff);
+		endPoint = read(0, buff, n);
+		buff[endPoint] = '\0';
 	}
+	
+	linesRead = 0;
+	char* output = (char *) malloc(endPoint);
+	for (i = 0; i < endPoint; i++) {
+		if (buff[i] == '\0') {
+			break;
+		}
+		if (linesRead >= lines) {
+			break;
+		}
+		if (buff[i] == '\n') {
+			linesRead++;
+			
+		}
+			output[i] = buff[i];
+	}
+	free(buff);
+	printf("%s\n", output);
+	free(output);
 	
 	return 0;
 	
