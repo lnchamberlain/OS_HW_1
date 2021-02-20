@@ -142,17 +142,17 @@ int main(int argc, char **argv) {
 	}
 	linesRead = 0;
 	read(fd, buff, n);
-	int lastLines[lines];
+	int lastLines[lines+1];
 	int lineIndex = 0;
 	for (i = 0; buff[i] != '\0'; i++) {
 		if (buff[i] == '\n') {
 			linesRead++;
-			if (lineIndex != lines) {
+			if (lineIndex != lines + 1) {
 				lastLines[lineIndex] = i;
 				lineIndex++;
 			}
 			else {
-				shiftArray(lastLines, i, lines);
+				shiftArray(lastLines, i, lines + 1);
 			}
 		}
 	}
