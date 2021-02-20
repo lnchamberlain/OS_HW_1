@@ -2,6 +2,8 @@
 Benjamin Good and Logan Chamberlain
 CSCE A321: Operating Systems
 February 18, 2021
+
+Implementation of the head linux function. Arguments may be passed in the form -n [num] [filename] or as [filename] -n [num]. Will read from standard input if no filename is supplied. 
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,24 +24,24 @@ int main(int argc, char **argv) {
 	char *buff;
 	char *fileName;
 	int passedFile = 0;
-	long n = (long) calcExp(2, 64) - 1;
+	//Any longer and malloc will return null
+	long n =  calcExp(2, 30) - 1;
 	int lines;
 	int i;
 	int linesRead;
-	printf("n is %ld \n", n);
 	buff = (char *) malloc(n);
 	if (buff == NULL) {
 	  fprintf(stderr, "Error allocating memory \n");
 	  return 1;
 	}
 	//Handle case:  number -n
-	if (argc == 4 && strcmp(argv[2], "-n") == 0) {
+	if (argc == 4 && strComp(argv[2], "-n") == 1) {
 		lines = convertToInt(argv[3]);
 		fileName = argv[1];
 		passedFile = 1;
 	}
-	//Handle case: -n number 
-	else if (argc == 4 && strcmp(argv[1], "-n") == 0) {
+	//Handle case: -n number
+	else if (argc == 4 && strComp(argv[1], "-n") == 1) {
 		lines = convertToInt(argv[2]);
 		fileName = argv[3];
 		passedFile = 1;
@@ -103,20 +105,21 @@ int main(int argc, char **argv) {
 			output[i] = buff[i];
 	}
 	free(buff);
-	write(1, output, sizeof(output));
+	write(1, output, endPoint);
 	free(output);
 	
 	return 0;
 	
 }
+//calcExp implements math.pow functionality, reuturns a long value as exponents grow large quickly. 
 long calcExp(int b, int e) {
-     int x = 1;
+  long  x = 1;
         for (int i = 0; i < e; i++) {
                 x *= b;
         }
         return x;
 	}
-	  
+//strComp implements strcmp, will return 1 if the given strings are equal and 0 if not. 	  
  int strComp(char str1[], char str2[]){
 	  int result, len1, len2, i;
 	  result = 0;
@@ -142,13 +145,14 @@ long calcExp(int b, int e) {
 	  }
 	  return 1;
 	}
-  
+//convertToInt implements atoi, returns the integer equivelent of a string number, will return an error message if not all numbers 0-9.   
 int convertToInt(char *str) {
         int i;
         char c;
         int digit;
         int res = 0;
         int incCounter = 0;
+	printf("str is %s \n", str);
         for (i = 0; str[i] != '\0'; i++) {
                 incCounter++;
         }
