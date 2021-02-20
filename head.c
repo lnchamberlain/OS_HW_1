@@ -31,6 +31,10 @@ int main(int argc, char **argv) {
 	int linesRead;
 	
 	buff = (char *) malloc(n);
+	if (buff == NULL) {
+        	fprintf(stderr, "Error allocating memory \n");
+          	return 1;
+        }
 	
 	// Handle case:  number -n
 	if (argc == 4 && strComp(argv[2], "-n")) {
@@ -81,6 +85,10 @@ int main(int argc, char **argv) {
 	
 	linesRead = 0;
 	char* output = (char *) malloc(endPoint);
+	if (output == NULL) {
+        	fprintf(stderr, "Error allocating memory \n");
+          	return 1;
+        }
 	for (i = 0; i < endPoint; i++) {
 		if (buff[i] == '\0') {
 			break;
