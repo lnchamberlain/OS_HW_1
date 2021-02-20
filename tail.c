@@ -97,7 +97,7 @@ int* shiftArray(int *arr, int x, int len) {
 char* copyChunk(char *source, char *dest, int start) {
 	int i;
 	int destIndex = 0;
-	for (i = start; source[i] != '\0'; i++) {
+	for (i = start + 1; source[i] != '\0'; i++) {
 		dest[destIndex] = source[i];
 		destIndex++;
 	}
