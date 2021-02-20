@@ -141,10 +141,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	linesRead = 0;
-	int charsRead = 0;
 	read(fd, buff, n);
-	int ex = 0;
-	int linePoint = 0;
 	int lastLines[lines];
 	int lineIndex = 0;
 	for (i = 0; buff[i] != '\0'; i++) {
