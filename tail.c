@@ -17,7 +17,7 @@ Implementation of the tail linux function. Arguments may be passed in the form \
 #include <fcntl.h>
 #include <unistd.h>
 
-
+int strComp(char str1[], char str2[]);
 int calcExp(int a, int b);
 int convertToInt(char *str);
 int calcExp(int b, int e);
@@ -36,13 +36,13 @@ int main(int argc, char **argv) {
 	
 	char buff[n];
 	// Handle case:  number -n
-	if (argc == 4 && strComp(argv[2], "-n") == 0) {
+	if (argc == 4 && strComp(argv[2], "-n") == 1) {
 		lines = convertToInt(argv[3]);
 		fileName = argv[1];
 		passedFile = 1;
 	}
 	// Handle case: num -n <file>
-	else if (argc == 4 && strComp(argv[1], "-n") == 0) {
+	else if (argc == 4 && strComp(argv[1], "-n") == 1) {
 		lines = convertToInt(argv[2]);
 		fileName = argv[3];
 		passedFile = 1;
@@ -208,7 +208,7 @@ int calcExp(int b, int e) {
         }
         return x;
 }
-
+//returns the size of the char array
 long getGap(char* cstr, int start) {
         int i;
         long sizeGap = 0;
@@ -217,7 +217,7 @@ long getGap(char* cstr, int start) {
         }
         return sizeGap;
 }
-
+//shiftArray shifts array down one space
 int* shiftArray(int *arr, int x, int len) {
         int i;
         for (i = 1; i < len; i++) {
@@ -226,9 +226,10 @@ int* shiftArray(int *arr, int x, int len) {
         arr[len-1] = x;
         return arr;
 }
-
+//copies a chunk of a source array starting at index start
 char* copyChunk(char *source, char *dest, int start) {
-        int i;
+  //To combat an empty line being added to the start of each output, start the loop one character after the newline specified in the array
+  int i;
         int destIndex = 0;
         for (i = start + 1; source[i] != '\0'; i++) {
                 dest[destIndex] = source[i];
